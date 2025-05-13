@@ -54,52 +54,79 @@ if(HNSWLIB_EXAMPLES)
     endif()
 
     # examples
-    add_executable(example_search examples/cpp/example_search.cpp)
-    target_link_libraries(example_search hnswlib)
+    # add_executable(example_search examples/cpp/example_search.cpp)
+    # target_link_libraries(example_search hnswlib)
 
-    add_executable(example_epsilon_search examples/cpp/example_epsilon_search.cpp)
-    target_link_libraries(example_epsilon_search hnswlib)
+    # add_executable(example_epsilon_search examples/cpp/example_epsilon_search.cpp)
+    # target_link_libraries(example_epsilon_search hnswlib)
 
-    add_executable(example_multivector_search examples/cpp/example_multivector_search.cpp)
-    target_link_libraries(example_multivector_search hnswlib)
+    # add_executable(example_multivector_search examples/cpp/example_multivector_search.cpp)
+    # target_link_libraries(example_multivector_search hnswlib)
 
-    add_executable(example_filter examples/cpp/example_filter.cpp)
-    target_link_libraries(example_filter hnswlib)
+    # add_executable(example_filter examples/cpp/example_filter.cpp)
+    # target_link_libraries(example_filter hnswlib)
 
-    add_executable(example_replace_deleted examples/cpp/example_replace_deleted.cpp)
-    target_link_libraries(example_replace_deleted hnswlib)
+    # add_executable(example_replace_deleted examples/cpp/example_replace_deleted.cpp)
+    # target_link_libraries(example_replace_deleted hnswlib)
 
-    add_executable(example_mt_search examples/cpp/example_mt_search.cpp)
-    target_link_libraries(example_mt_search hnswlib)
+    # add_executable(example_mt_search examples/cpp/example_mt_search.cpp)
+    # target_link_libraries(example_mt_search hnswlib)
 
-    add_executable(example_mt_filter examples/cpp/example_mt_filter.cpp)
-    target_link_libraries(example_mt_filter hnswlib)
+    # add_executable(example_mt_filter examples/cpp/example_mt_filter.cpp)
+    # target_link_libraries(example_mt_filter hnswlib)
 
-    add_executable(example_mt_replace_deleted examples/cpp/example_mt_replace_deleted.cpp)
-    target_link_libraries(example_mt_replace_deleted hnswlib)
+    # add_executable(example_mt_replace_deleted examples/cpp/example_mt_replace_deleted.cpp)
+    # target_link_libraries(example_mt_replace_deleted hnswlib)
 
-    # tests
-    add_executable(multivector_search_test tests/cpp/multivector_search_test.cpp)
-    target_link_libraries(multivector_search_test hnswlib)
+    # add_executable(example_henn examples/cpp/example_henn.cpp)
+    # target_link_libraries(example_henn hnswlib)
 
-    add_executable(epsilon_search_test tests/cpp/epsilon_search_test.cpp)
-    target_link_libraries(epsilon_search_test hnswlib)
+    # add_executable(hnsw_hardness examples/cpp/hnsw_hardness.cpp)
+    # target_link_libraries(hnsw_hardness hnswlib)
 
-    add_executable(test_updates tests/cpp/updates_test.cpp)
-    target_link_libraries(test_updates hnswlib)
+    # add_executable(henn_hardness examples/cpp/henn_hardness.cpp)
+    # target_link_libraries(henn_hardness hnswlib)
 
-    add_executable(searchKnnCloserFirst_test tests/cpp/searchKnnCloserFirst_test.cpp)
-    target_link_libraries(searchKnnCloserFirst_test hnswlib)
+    # add_executable(henn_compare_time examples/cpp/henn_compare_time.cpp)
+    # target_link_libraries(henn_compare_time hnswlib)
 
-    add_executable(searchKnnWithFilter_test tests/cpp/searchKnnWithFilter_test.cpp)
-    target_link_libraries(searchKnnWithFilter_test hnswlib)
+    # add_executable(henn_avg_time examples/cpp/henn/henn_avg_time.cpp)
+    # target_link_libraries(henn_avg_time hnswlib)
 
-    add_executable(multiThreadLoad_test tests/cpp/multiThreadLoad_test.cpp)
-    target_link_libraries(multiThreadLoad_test hnswlib)
+    add_executable(worst_time_compare examples/cpp/henn/worst_time_compare.cpp)
+    target_link_libraries(worst_time_compare hnswlib)
 
-    add_executable(multiThread_replace_test tests/cpp/multiThread_replace_test.cpp)
-    target_link_libraries(multiThread_replace_test hnswlib)
+    add_executable(henn_time_recall examples/cpp/henn/henn_time_recall.cpp)
+    target_link_libraries(henn_time_recall hnswlib)
+	
+    add_executable(hnsw_time_recall examples/cpp/henn/hnsw_time_recall.cpp)
+    target_link_libraries(hnsw_time_recall hnswlib)
 
-    add_executable(main tests/cpp/main.cpp tests/cpp/sift_1b.cpp)
-    target_link_libraries(main hnswlib)
+    add_executable(hops_compare examples/cpp/henn/hops_compare.cpp)
+    target_link_libraries(hops_compare hnswlib)
+
+    # # tests
+    # add_executable(multivector_search_test tests/cpp/multivector_search_test.cpp)
+    # target_link_libraries(multivector_search_test hnswlib)
+
+    # add_executable(epsilon_search_test tests/cpp/epsilon_search_test.cpp)
+    # target_link_libraries(epsilon_search_test hnswlib)
+
+    # add_executable(test_updates tests/cpp/updates_test.cpp)
+    # target_link_libraries(test_updates hnswlib)
+
+    # add_executable(searchKnnCloserFirst_test tests/cpp/searchKnnCloserFirst_test.cpp)
+    # target_link_libraries(searchKnnCloserFirst_test hnswlib)
+
+    # add_executable(searchKnnWithFilter_test tests/cpp/searchKnnWithFilter_test.cpp)
+    # target_link_libraries(searchKnnWithFilter_test hnswlib)
+
+    # add_executable(multiThreadLoad_test tests/cpp/multiThreadLoad_test.cpp)
+    # target_link_libraries(multiThreadLoad_test hnswlib)
+
+    # add_executable(multiThread_replace_test tests/cpp/multiThread_replace_test.cpp)
+    # target_link_libraries(multiThread_replace_test hnswlib)
+
+    # add_executable(main tests/cpp/main.cpp tests/cpp/sift_1b.cpp)
+    # target_link_libraries(main hnswlib)
 endif()

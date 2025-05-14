@@ -3,12 +3,146 @@
 #include <vector>
 #include <random>
 #include <unordered_set>
-#include <hnswlib/hnswlib.h>
+// #include <hnswlib/hnswlib.h>
+#include "hnswlib.h"
 #include <iostream>
 #include <cmath>
+#include <thread>
+
+#include <mutex>
+#include <atomic>
+#include <exception>
+#include <iterator>
 
 using namespace std;
 using namespace hnswlib;
+
+// Multithreaded executor
+// The helper function copied from python_bindings/bindings.cpp (and that itself is copied from nmslib)
+// An alternative is using #pragme omp parallel for or any other C++ threading
+template <class Function>
+inline void Parallel(size_t start, size_t end, size_t numThreads, Function fn)
+{
+    if (numThreads <= 0)
+    {
+        numThreads = std::thread::hardware_concurrency();
+    }
+
+    if (numThreads == 1)
+    {
+        for (size_t id = start; id < end; id++)
+        {
+            fn(id, 0);
+        }
+    }
+    else
+    {
+        std::vector<std::thread> threads;
+        std::atomic<size_t> current(start);
+
+        // keep track of exceptions in threads
+        // https://stackoverflow.com/a/32428427/1713196
+        std::exception_ptr lastException = nullptr;
+        std::mutex lastExceptMutex;
+
+        for (size_t threadId = 0; threadId < numThreads; ++threadId)
+        {
+            threads.push_back(std::thread([&, threadId]
+                                          {
+                while (true) {
+                    size_t id = current.fetch_add(1);
+
+                    if (id >= end) {
+                        break;
+                    }
+
+                    try {
+                        fn(id, threadId);
+                    } catch (...) {
+                        std::unique_lock<std::mutex> lastExcepLock(lastExceptMutex);
+                        lastException = std::current_exception();
+                        /*
+                         * This will work even when current is the largest value that
+                         * size_t can fit, because fetch_add returns the previous value
+                         * before the increment (what will result in overflow
+                         * and produce 0 instead of current + 1).
+                         */
+                        current = end;
+                        break;
+                    }
+                } }));
+        }
+        for (auto &thread : threads)
+        {
+            thread.join();
+        }
+        if (lastException)
+        {
+            std::rethrow_exception(lastException);
+        }
+    }
+}
+
+template <class Function>
+inline void ParallelMap(const std::unordered_map<int, int> &data, size_t numThreads, Function fn)
+{
+    if (numThreads <= 0)
+    {
+        numThreads = std::thread::hardware_concurrency();
+    }
+
+    // Convert keys to a vector for indexed access
+    std::vector<int> keys;
+    keys.reserve(data.size());
+    for (const auto &kv : data)
+    {
+        keys.push_back(kv.first);
+    }
+
+    size_t total = keys.size();
+
+    if (numThreads == 1 || total < numThreads)
+    {
+        for (size_t i = 0; i < total; i++)
+        {
+            int key = keys[i];
+            fn(key, data.at(key), 0);
+        }
+    }
+    else
+    {
+        std::vector<std::thread> threads;
+        std::atomic<size_t> current(0);
+        std::exception_ptr lastException = nullptr;
+        std::mutex lastExceptMutex;
+
+        for (size_t threadId = 0; threadId < numThreads; ++threadId)
+        {
+            threads.emplace_back([&, threadId]
+                                 {
+                while (true) {
+                    size_t index = current.fetch_add(1);
+                    if (index >= total) break;
+
+                    int key = keys[index];
+                    try {
+                        fn(key, data.at(key), threadId);
+                    } catch (...) {
+                        std::unique_lock<std::mutex> lock(lastExceptMutex);
+                        lastException = std::current_exception();
+                        current = total;
+                        break;
+                    }
+                } });
+        }
+
+        for (auto &t : threads)
+            t.join();
+
+        if (lastException)
+            std::rethrow_exception(lastException);
+    }
+}
 
 /*
  * Search for "TODO: fine-tune" in this file to find the parameters that can be fine-tuned.
@@ -59,6 +193,7 @@ namespace henn
     float *getRanges(int ranges_size, int dim)
     {
         std::mt19937 rng(42);
+        // std::mt19937 rng(std::random_device{}());
         std::uniform_real_distribution<> distro(0.0f, 1.0f); // or other distros
 
         float *ranges = new float[dim * ranges_size];
@@ -81,9 +216,10 @@ namespace henn
      */
     int getK(int numPoints)
     {
-        int k = floor(log2(numPoints)) / 4;
-        k += 3;
-        k = max(k, 2);
+        int k = floor(log2(numPoints));
+        k += 1;
+        k = max(k, 4);
+        // k = min(k, 5);
         // TODO: fine-tune
         return min(k, numPoints);
     }
@@ -91,17 +227,28 @@ namespace henn
     vector<float> getKthDistances(const float *ranges, int ranges_size, const float *points, int numPoints, int dim, int k, SpaceInterface<float> *space)
     {
         HierarchicalNSW<float> hnsw(space, numPoints);
-        for (int i = 0; i < numPoints; i++)
-        {
-            hnsw.addPoint(points + i * dim, i);
-        }
+        // for (int i = 0; i < numPoints; i++)
+        // {
+        //     cout << "Adding point " << i << " of " << numPoints << "\r";
+        //     hnsw.addPoint(points + i * dim, i);
+        // }
+        cout << "Adding points to HNSW index..." << endl;
+        Parallel(0, numPoints, 60, [&](size_t row, size_t threadId)
+                 {
+            size_t id = row;
+            hnsw.addPoint((void *)(points + dim * row), (size_t)id); });
+
+        // hnsw.saveIndex("henn_index.bin");
+        hnsw.setEf(400);
 
         vector<float> kthDistances(ranges_size);
         for (int i = 0; i < ranges_size; ++i)
         {
+            cout << "Searching for point " << i + 1 << " of " << ranges_size << "\r";
             auto knnResult = hnsw.searchKnn(ranges + i * dim, k);
             kthDistances[i] = knnResult.top().first;
         }
+        cout << endl;
 
         return kthDistances;
     }
@@ -126,12 +273,12 @@ namespace henn
 
         int k = getK(numPoints);
 
-        // cout << "k is set to " << k << " num points: " << numPoints << endl;
+        cout << "k is set to " << k << " num points: " << numPoints << endl;
 
-        int ranges_size = 400; // TODO: fine-tune
+        int ranges_size = 800; // TODO: fine-tune
         float *ranges = getRanges(ranges_size, dim);
 
-        // cout << "Ranges size: " << ranges_size << endl;
+        cout << "Ranges size: " << ranges_size << endl;
 
         vector<float> kthDistances = getKthDistances(ranges, ranges_size, points, numPoints, dim, k, space);
 
@@ -142,6 +289,7 @@ namespace henn
 
         for (size_t attempt = 0; attempt < maxTries; ++attempt)
         {
+            cout << "Attempt " << attempt + 1 << " of " << maxTries << "\r" << flush;
             size_t sampleSize = numPoints / pow(2, M);
             auto smpl = sample(points, indices, numPoints, dim, sampleSize);
             float *epsilonNet = smpl.second;
@@ -183,7 +331,8 @@ namespace henn
                 worst_epsnet = smpl;
             }
         }
-        // cout << "Max hits " << static_cast<float>(max_hit) / ranges_size << " Min hits: " << static_cast<float>(min_hit) / ranges_size << endl;
+        cout << endl;
+        cout << "Max hits " << static_cast<float>(max_hit) / ranges_size << " Min hits: " << static_cast<float>(min_hit) / ranges_size << endl;
 
         return {best_epsnet, worst_epsnet};
     }
@@ -203,6 +352,8 @@ namespace henn
         // TODO: fine-tune M
         int L = static_cast<int>(floor(log2(numPoints) / M));
 
+        cout << "L is set to " << L << endl;
+
         unordered_map<int, int> indexToLayer;
 
         vector<int> cur_layer(numPoints);
@@ -220,11 +371,11 @@ namespace henn
         {
             if (isBest)
             {
-                epsnet = getBestWorstSample(tmp, cur_layer, size, dim, 10000, space, M).first;
+                epsnet = getBestWorstSample(tmp, cur_layer, size, dim, 200, space, M).first;
             }
             else
             {
-                epsnet = getBestWorstSample(tmp, cur_layer, size, dim, 10000, space, M).second;
+                epsnet = getBestWorstSample(tmp, cur_layer, size, dim, 200, space, M).second;
             }
 
             tmp = epsnet.second;
@@ -251,25 +402,42 @@ namespace henn
     {
         std::vector<int> alreadyAdded;
         hnswlib::HierarchicalNSW<dist_t> *hnsw = new hnswlib::HierarchicalNSW<dist_t>(space, numPoints);
-        for (const auto &[index, layer] : layers)
-        {
-            if (std::find(alreadyAdded.begin(), alreadyAdded.end(), index) != alreadyAdded.end())
-            {
-                continue;
-            }
-            alreadyAdded.push_back(index);
-            hnsw->addPoint(points + index * dim, index, layer);
-        }
+
+        // int count = 0;
+        // for (const auto &[index, layer] : layers)
+        // {
+        //     count += 1;
+        //     cout << "Adding to layer " << count << "\r" << flush;
+        //     if (std::find(alreadyAdded.begin(), alreadyAdded.end(), index) != alreadyAdded.end())
+        //     {
+        //         continue;
+        //     }
+        //     alreadyAdded.push_back(index);
+        //     hnsw->addPoint(points + index * dim, index, layer);
+        // }
+        cout << "Adding points to HENN index..." << endl;
+        ParallelMap(layers, 60, [&](int index, int layer, size_t threadId)
+                    {
+            // if (std::find(alreadyAdded.begin(), alreadyAdded.end(), index) != alreadyAdded.end())
+            // {
+            //     return;
+            // }
+            // alreadyAdded.push_back(index);
+            hnsw->addPoint(points + index * dim, index, layer); });
+
+        cout << "Number of points in hnsw: " << hnsw->cur_element_count << endl;
+
+        cout << endl;
         return hnsw;
     }
 
     /*
      *  Call this function to build the HENN Index. See examples/cpp/henn/henn_time_recall.cpp for usage.
      */
-    HierarchicalNSW<float> *buildHENN(float *data, int size, int dim, SpaceInterface<float> *space, int M)
+    HierarchicalNSW<float> *buildHENN(float *data, int size, int dim, SpaceInterface<float> *space, int M, bool best = true)
     {
         cout << "Building HENN..." << endl;
-        auto henn_layers = buildBestWorstLayers(data, size, dim, space, M, true);
+        auto henn_layers = buildBestWorstLayers(data, size, dim, space, M, best);
         auto henn = buildHENN(henn_layers, data, size, dim, space);
         cout << "HENN built." << endl;
         return henn;

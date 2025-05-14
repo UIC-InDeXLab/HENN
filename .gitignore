@@ -11,3 +11,6 @@ var/
 .vs/
 **.DS_Store
 *.pyc
+examples/python/henn/datasets
+examples/python/henn/*.bin
+examples/figures

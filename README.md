@@ -3,7 +3,7 @@
 *A Hierarchical Epsilon Net Navigation Graph for Approximate Nearest Neighbor Search*
 
 <p align="center">
-  <img alt="HENN Structure" src="examples/reports/nav_graph_back.png" width="60%">
+  <img alt="HENN Structure" src="examples/reports/nav_graph_darkbg.png" width="70%">
 </p>
 
 ## Overview

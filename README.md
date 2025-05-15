@@ -9,7 +9,12 @@ This repository is forked from [https://github.com/nmslib/hnswlib](https://githu
 * The running examples are provided in:
   * `examples/cpp/henn`
   * `examples/python/henn`
-* To run the examples, change the `CMakeList.txt` accordingly.
+* To run the examples, change the `CMakeList.txt` to compile the corresponding examples.
 
 ## Build and Run
 * Follow the same guidelines provided in [hnswlib](https://github.com/nmslib/hnswlib).
+  * Build the `C++` implementations:
+    * `mkdir build && cd build && cmake ..`
+    * `make`
+  * Build `Python` bindings:
+    * `python setup.py install` 

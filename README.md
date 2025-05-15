@@ -2,6 +2,10 @@
 
 *A Hierarchical Epsilon Net Navigation Graph for Approximate Nearest Neighbor Search*
 
+<p align="center">
+  <img alt="HENN Structure" src="examples/reports/nav_graph_back.png" width="60%">
+</p>
+
 ## Overview
 
 This repository builds on [hnswlib](https://github.com/nmslib/hnswlib) by introducing the `HENN` graph — a hierarchical structure using ε-nets for approximate nearest neighbor (ANN) search.
@@ -25,7 +29,7 @@ cmake ..
 make
 ```
 
-## Python (bindings) Build
+### Python (bindings) Build
 ```bash
 python setup.py install
 ```

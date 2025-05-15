@@ -1,20 +1,31 @@
-# HENN
+# 🐔 HENN
 
-A Hierarchical Epsilon Net Navigation Graph for Approximate Nearest Neighbor Search
+*A Hierarchical Epsilon Net Navigation Graph for Approximate Nearest Neighbor Search*
 
-This repository is forked from [https://github.com/nmslib/hnswlib](https://github.com/nmslib/hnswlib).
+## Overview
 
-## Hierarchical Epsilon Net Navigation
-* The implementation of `HENN` graph is in `hnswlib/henn.h`.
-* The running examples are provided in:
-  * `examples/cpp/henn`
-  * `examples/python/henn`
-* To run the examples, change the `CMakeList.txt` to compile the corresponding examples.
+This repository builds on [hnswlib](https://github.com/nmslib/hnswlib) by introducing the `HENN` graph — a hierarchical structure using ε-nets for approximate nearest neighbor (ANN) search.
+
+- Forked from [hnswlib](https://github.com/nmslib/hnswlib)
+- Core implementation: [`hnswlib/henn.h`](hnswlib/henn.h)
+- Example usage:
+  - C++: `examples/cpp/henn`
+  - Python: `examples/python/henn`
+- To run examples, edit `CMakeLists.txt` to compile the desired targets.
 
 ## Build and Run
-* Follow the same guidelines provided in [hnswlib](https://github.com/nmslib/hnswlib).
-  * Build the `C++` implementations:
-    * `mkdir build && cd build && cmake ..`
-    * `make`
-  * Build `Python` bindings:
-    * `python setup.py install` 
+
+Follow the original [hnswlib build instructions](https://github.com/nmslib/hnswlib):
+
+### C++ Build
+
+```bash
+mkdir build && cd build
+cmake ..
+make
+```
+
+## Python (bindings) Build
+```bash
+python setup.py install
+```
